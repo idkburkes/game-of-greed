@@ -73,13 +73,11 @@ class GameLogic:
     def validate_keepers(dice, held_dice):
         dice_counter = Counter(dice)
         held_dice_counter = Counter(held_dice)
-        dice_n = len(dice_counter)
-        held_n = len(held_dice_counter)
         val = False
-
+        
         for h_num, h_count in held_dice_counter.items():
             for d_num, d_count in dice_counter.items():
-                if h_num == d_num and h_count == d_count:
+                if h_num == d_num and h_count <= d_count:
                     val = True
                     break
                 else:
