@@ -79,8 +79,6 @@ class GameLogic:
         #create counter items for each set of numbers and define a return boolean as False
         dice_counter = Counter(dice)
         held_dice_counter = Counter(held_dice)
-        dice_n = len(dice_counter)
-        held_n = len(held_dice_counter)
         val = False
 
         #For each held dice, check against each rolled die to ensure 
