@@ -71,15 +71,22 @@ class GameLogic:
             
     @staticmethod
     def validate_keepers(dice, held_dice):
+        '''
+        Ensures dice held by users are actually valid numbers that were rolled this round.
+        Input: dice as a tuple, held_dice as a tuple
+        Output: boolean
+        '''
+        #create counter items for each set of numbers and define a return boolean as False
         dice_counter = Counter(dice)
         held_dice_counter = Counter(held_dice)
         dice_n = len(dice_counter)
         held_n = len(held_dice_counter)
         val = False
 
+        #For each held dice, check against each rolled die to ensure 
         for h_num, h_count in held_dice_counter.items():
             for d_num, d_count in dice_counter.items():
-                if h_num == d_num and h_count == d_count:
+                if h_num == d_num and h_count <= d_count:
                     val = True
                     break
                 else:
