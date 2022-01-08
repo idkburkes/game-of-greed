@@ -1,131 +1,104 @@
-import sys
-
-from game_of_greed.game_logic import GameLogic
-from game_of_greed.banker import Banker
+from collections import Counter
+from random import randint
 
 
-class Game:
-    """Class for Game of Greed application
-    """
+class GameLogic:
+    @staticmethod
+    def roll_dice(num=6):
+        # version_1
 
-    def __init__(self, num_rounds=20):
+        return tuple([randint(1, 6) for _ in range(num)])
 
-        self.banker = Banker()
-        self.num_rounds = num_rounds
-        self.round_num = 0
-
-    def play(self, roller=None):
-        """Entry point for playing (or declining) a game
-
-        Args:
-            roller (function, optional): Allows passing in a custom dice roller function.
-                Defaults to None.
+    @staticmethod
+    def calculate_score(dice):
         """
-
-        self._roller = roller or GameLogic.roll_dice
-
-        print("Welcome to Game of Greed")
-
-        print("(y)es to play or (n)o to decline")
-        response = input("> ")
-
-        if response == "n":
-            print("OK. Maybe another time")
-        else:
-            for round_num in range(1, self.num_rounds + 1):
-                self.start_round(round_num)
-
-            self.end_game()
-
-    def end_game(self):
-        print(f"Thanks for playing. You earned {self.banker.balance} points")
-        sys.exit()
-
-    def start_round(self, round_num):
-        num_dice = 6
-        print(f"Starting round {round_num}")
-        round_score = 0
-
-        while True:
-            print(f"Rolling {num_dice} dice...")
-
-            roll = self._roller(num_dice)
-            roll_string = " ".join([str(value) for value in roll])
-            print(f"*** {roll_string} ***")
-
-            preliminary_score = GameLogic.calculate_score(roll)
-
-            if preliminary_score == 0:
-                self.zilch(round_num)
-                return
-
-            keeper_values = self.validate_keepers(roll, roll_string)
-
-            keeper_score = GameLogic.calculate_score(keeper_values)
-
-            round_score += keeper_score
-
-            num_dice -= len(keeper_values)
-
-            print(
-                f"You have {round_score} unbanked points and {num_dice} dice remaining"
-            )
-            print("(r)oll again, (b)ank your points or (q)uit:")
-            response = input("> ")
-
-            if response == "b":
-                self.banker.shelf(round_score)
-                banked_points = self.banker.bank()
-                self.end_round(round_num, banked_points)
-                break
-            elif response == "r":
-                if num_dice == 0:
-                    num_dice = 6
-            elif response == "q":
-                self.end_game()
-
-    def zilch(self, round_num):
-        """Zero scoring dice were rolled so end round with 0 points"""
-        print("****************************************")
-        print("**        Zilch!!! Round over         **")
-        print("****************************************")
-
-        self.end_round(round_num, 0)
-
-    def end_round(self, round_num, banked_points):
-        """bank points and finish round"""
-        print(f"You banked {banked_points} points in round {round_num}")
-        print(f"Total score is {self.banker.balance} points")
-
-    def validate_keepers(self, roll, roll_string):
-        """ensures that kept dice are valid for the roll
-
-        Args:
-            roll
-            roll_string
-
-        Returns:
-            valid keeper values
+        dice is a tuple of integers that represent the user's selected dice pulled out from current roll
         """
-        while True:
-            print("Enter dice to keep, or (q)uit:")
-            response = input("> ")
-            if response == "q":
-                self.end_game()
-                break
+        # version_1
 
-            keeper_values = []
-            for char in response:
-                if char.isnumeric():
-                    keeper_values.append(int(char))
+        if len(dice) > 6:
+            raise Exception("Cheating Cheater!")
 
-            if GameLogic.validate_keepers(roll, keeper_values):
-                return keeper_values
-            else:
-                print("Cheater!!! Or possibly made a typo...")
-                print(f"*** {roll_string} ***")
+        counts = Counter(dice)
 
+        if len(counts) == 6:
+            return 1500
 
-if __name__ == "__main__":
-    game = Game()
-    game.play()
+        if len(counts) == 3 and all(val == 2 for val in counts.values()):
+            return 1500
+
+        score = 0
+
+        ones_used = fives_used = False
+
+        for num in range(1, 6 + 1):
+
+            pip_count = counts[num]
+
+            if pip_count >= 3:
+
+                if num == 1:
+
+                    ones_used = True
+
+                elif num == 5:
+
+                    fives_used = True
+
+                score += num * 100
+
+                # handle 4,5,6 of a kind
+                pips_beyond_3 = pip_count - 3
+
+                score += score * pips_beyond_3
+
+                # bug if 2 threesomes? Let's test it
+
+                # 1s are worth 10x
+                if num == 1:
+                    score *= 10
+
+        if not ones_used:
+            score += counts.get(1, 0) * 100
+
+        if not fives_used:
+            score += counts.get(5, 0) * 50
+
+        return score
+
+    @staticmethod
+    def validate_keepers(roll, keepers):
+        # version_3
+
+        # pro tip: you can do some math operations with counters
+        # check https://docs.python.org/3/library/collections.html#collections.Counter
+        keeper_counter = Counter(keepers)
+        roll_counter = Counter(roll)
+
+        # a "valid" result is an empty Counter result
+        result = keeper_counter - roll_counter
+
+        # an empty Counter is falsy, so use "not" to flip it
+        return not result
+
+    @staticmethod
+    def get_scorers(dice):
+        # version_3
+
+        all_dice_score = GameLogic.calculate_score(dice)
+
+        if all_dice_score == 0:
+            return tuple()
+
+        scorers = []
+
+        # for i in range(len(dice)):
+
+        for i, val in enumerate(dice):
+            sub_roll = dice[:i] + dice[i + 1 :]
+            sub_score = GameLogic.calculate_score(sub_roll)
+
+            if sub_score != all_dice_score:
+                scorers.append(val)
+
+        return tuple(scorers)
