@@ -37,10 +37,8 @@ class Game:
 
 
     def start_game(self):
-        welcome_msg = dedent('''\
-        Welcome to Game of Greed
-        (y)es to play or (n)o to decline''')
-        print(welcome_msg)
+        print("Welcome to Game of Greed")
+        print("(y)es to play or (n)o to decline")
         selection = input('> ')
         starting = selection.lower() == 'y'
         if starting:
