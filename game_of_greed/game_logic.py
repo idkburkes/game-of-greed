@@ -1,45 +1,104 @@
-import random
 from collections import Counter
+from random import randint
+
+
 class GameLogic:
-    
     @staticmethod
-    def roll_dice(num):
-        rolls = []
-        for _ in range(num):
-            rolls.append(random.randint(1,6))
-        return tuple(rolls)
+    def roll_dice(num=6):
+        # version_1
+
+        return tuple([randint(1, 6) for _ in range(num)])
 
     @staticmethod
     def calculate_score(dice):
+        """
+        dice is a tuple of integers that represent the user's selected dice pulled out from current roll
+        """
+        # version_1
+
+        if len(dice) > 6:
+            raise Exception("Cheating Cheater!")
+
+        counts = Counter(dice)
+
+        if len(counts) == 6:
+            return 1500
+
+        if len(counts) == 3 and all(val == 2 for val in counts.values()):
+            return 1500
+
         score = 0
-        counter = Counter(dice)
-        n = len(counter)
-        if n == 6 and all(count == 1 for count in counter.values()):
-            return 1500 #handle straight
-        elif n == 3 and all(count == 2 for count in counter.values()):
-            return 1500 #handle three pairs
-        else:
-            for num, count in counter.items(): 
-                if count >= 3:
-                    #handle 3-6 of a kind
-                    score += GameLogic.calc_triples_and_above(num, count)
-                else:
-                    #handle single 1's and 5's 
-                    score += GameLogic.calc_singles(num, count) 
+
+        ones_used = fives_used = False
+
+        for num in range(1, 6 + 1):
+
+            pip_count = counts[num]
+
+            if pip_count >= 3:
+
+                if num == 1:
+
+                    ones_used = True
+
+                elif num == 5:
+
+                    fives_used = True
+
+                score += num * 100
+
+                # handle 4,5,6 of a kind
+                pips_beyond_3 = pip_count - 3
+
+                score += score * pips_beyond_3
+
+                # bug if 2 threesomes? Let's test it
+
+                # 1s are worth 10x
+                if num == 1:
+                    score *= 10
+
+        if not ones_used:
+            score += counts.get(1, 0) * 100
+
+        if not fives_used:
+            score += counts.get(5, 0) * 50
+
         return score
 
     @staticmethod
-    def calc_triples_and_above(num, count):
-        if num == 1:
-            return 1000 * (count-2)
-        else:
-            return (100*num) * (count-2)
+    def validate_keepers(roll, keepers):
+        # version_3
+
+        # pro tip: you can do some math operations with counters
+        # check https://docs.python.org/3/library/collections.html#collections.Counter
+        keeper_counter = Counter(keepers)
+        roll_counter = Counter(roll)
+
+        # a "valid" result is an empty Counter result
+        result = keeper_counter - roll_counter
+
+        # an empty Counter is falsy, so use "not" to flip it
+        return not result
 
     @staticmethod
-    def calc_singles(num, count):
-        score = 0
-        if num == 1: 
-            score += 100 * count
-        elif num == 5:
-            score += 50 * count
-        return score
+    def get_scorers(dice):
+        # version_3
+
+        all_dice_score = GameLogic.calculate_score(dice)
+
+        if all_dice_score == 0:
+            return tuple()
+
+        scorers = []
+
+        # for i in range(len(dice)):
+
+        for i, val in enumerate(dice):
+            sub_roll = dice[:i] + dice[i + 1 :]
+            sub_score = GameLogic.calculate_score(sub_roll)
+
+            if sub_score != all_dice_score:
+                scorers.append(val)
+
+        return tuple(scorers)
